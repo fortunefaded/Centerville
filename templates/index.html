@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Deuce to Seven Triple Draw</title>
+  <style>
+    .card {
+      display: inline-block;
+      border: 1px solid black;
+      padding: 10px;
+      margin: 5px;
+      background-color: white;
+      color: white;
+      font-size: 1.5rem;
+    }
+
+    .s {
+      background-color: black;
+    }
+
+    .h {
+      background-color: red;
+    }
+
+    .d {
+      background-color: blue;
+    }
+
+    .c {
+      background-color: green;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #f0f0f0 25%, transparent 25%) -50px 0,
+        linear-gradient(225deg, #f0f0f0 25%, transparent 25%) -50px 0,
+        linear-gradient(315deg, #f0f0f0 25%, transparent 25%),
+        linear-gradient(45deg, #f0f0f0 25%, transparent 25%);
+      background-size: 100px 100px;
+      background-color: #2b2b2b;
+    }
+
+    .table {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .top-row, .bottom-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .bottom-row {
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Deuce to Seven Triple Draw</h1>
+  <div class="table">
+    <div class="top-row">
+      <div id="opponent1_hand"></div>
+      <div id="opponent2_hand"></div>
+      <div id="opponent3_hand"></div>
+    </div>
+    <div class="bottom-row">
+      <div id="opponent4_hand"></div>
+      <div id="player_hand"></div>
+      <div id="opponent5_hand"></div>
+    </div>
+  </div>
+  <button onclick="start_game()">Start Game</button>
+  <script>
+    const suits = {
+      's': '♠',
+      'h': '♥',
+      'd': '♦',
+      'c': '♣'
+    };
+    const face_cards = {
+      '10': 'T',
+      '11': 'J',
+      '12': 'Q',
+      '13': 'K',
+      '14': 'A'
+    };
+
+    function start_game() {
+        fetch('/start_game')
+            .then(response => response.json())
+            .then(data => {
+            player1Hand = [...data.player1_hand];
+
+            let player_hand_html = '';
+            for (const card of player1Hand) {
+                let suit = card[0];
+                let rank = card.slice(1);
+                rank = face_cards[rank] || rank;
+                player_hand_html += `<div class="card ${suit}">${suits[suit]}${rank}</div>`;
+            }
+            document.getElementById('player_hand').innerHTML = player_hand_html;
+
+            for (let i = 1; i <= 5; i++) {
+                let opponent_hand_html = '';
+                for (const card of data[`player${i + 1}_hand`]) {
+                opponent_hand_html += `<div class="card card-back"></div>`;
+                }
+                document.getElementById(`opponent${i}_hand`).innerHTML = opponent_hand_html;
+            }
+        });
+    }
+    let game_state = null;
+
+    function send_player_action(action) {
+    // Send the action to the server and update the game state
+    fetch(`/player_action/${action}`)
+        .then((response) => response.json())
+        .then((data) => {
+        // Update the game state with the data received from the server
+        update_game_state(data);
+        });
+    }
+
+    function player_bet() {
+    send_player_action("bet");
+    }
+
+    function player_call() {
+    send_player_action("call");
+    }
+
+    function player_fold() {
+    send_player_action("fold");
+    }
+
+  </script>
+  <div id="player_actions">
+    <button id="bet" onclick="player_bet()">Bet</button>
+    <button id="call" onclick="player_call()">Call</button>
+    <button id="fold" onclick="player_fold()">Fold</button>
+  </div>
+  
+</body>
+</html>
